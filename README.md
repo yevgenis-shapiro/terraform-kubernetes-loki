@@ -18,19 +18,6 @@
 
 ✅This module also includes alerting features that allow you to set up custom alerts for specific events or conditions. You can configure alerts to notify you via email, Slack, or other channels, and set up automated responses to resolve issues quickly.
 
-## Supported Versions Table:
-
-| Resources                       |  Helm Chart Version                |     K8s supported version        |  
-| :-----:                         | :---                               |         :---                     |
-| Kube-Prometheus-Stack           | **61.1.0**                         |    **1.23,1.24,1.25,1.26,1.27,1.28,1.29**  |
-| Prometheus-Blackbox-Exporter    | **8.17.0**                         |    **1.23,1.24,1.25,1.26,1.27,1.28,1.29**  |
-| Mimir                           | **5.4.0**                          |    **1.23,1.24,1.25,1.26,1.27,1.28,1.29**  |
-| Loki-Stack                      | **2.10.2**                          |    **1.23,1.24,1.25,1.26,1.27,1.28,1.29**  |
-| Loki-Scalable                   | **6.7.1**                          |    **1.23,1.24,1.25,1.26,1.27,1.28,1.29**  |
-| Tempo                           | **1.6.2**                          |    **1.23,1.24,1.25,1.26,1.27**  |
-| OTEL                            | **0.37.0**                         |    **1.23,1.24,1.25,1.26,1.27**  |
-
-
 ## Usage Example
 
 ```hcl
