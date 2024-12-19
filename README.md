@@ -2,21 +2,21 @@
 
 <br>
 
-This PGL module is for monitoring and analyzing logs and metrics from various sources. It includes these features Grafana, Prometheus, Loki, Mimir and Loki-scalable.
+✅This module is for monitoring and analyzing logs and metrics from various sources. It includes these features Grafana, Prometheus, Loki, Mimir and Loki-scalable.
 
-Grafana is an open-source platform for monitoring and observability, offering customizable dashboards, alerts, and data visualization for a wide range of data sources.
+✅Grafana is an open-source platform for monitoring and observability, offering customizable dashboards, alerts, and data visualization for a wide range of data sources.
 
-Prometheus is an open-source systems monitoring and alerting toolkit designed for reliability and scalability, providing powerful queries, storage, and visualization of time series data.
+✅Prometheus is an open-source systems monitoring and alerting toolkit designed for reliability and scalability, providing powerful queries, storage, and visualization of time series data.
 
-Loki is a log aggregation system that allows you to store, search, and analyze large volumes of logs from different sources. With Loki, you can quickly find the relevant logs and troubleshoot issues in your system. It uses a unique indexing method that stores metadata separately from the log data, making it very efficient and scalable.
+✅Loki is a log aggregation system that allows you to store, search, and analyze large volumes of logs from different sources. With Loki, you can quickly find the relevant logs and troubleshoot issues in your system. It uses a unique indexing method that stores metadata separately from the log data, making it very efficient and scalable.
 
-Mimir is a metric aggregation system that allows you to collect, store, and analyze metrics from various sources. It supports various data sources such as Prometheus, Graphite, and InfluxDB. With Mimir, you can visualize metrics using a variety of charts, graphs, and dashboards.
+✅Mimir is a metric aggregation system that allows you to collect, store, and analyze metrics from various sources. It supports various data sources such as Prometheus, Graphite, and InfluxDB. With Mimir, you can visualize metrics using a variety of charts, graphs, and dashboards.
 
-This PGL module includes multiple dashboards that provide a comprehensive view of your system's health and performance. These dashboards include system performance, error tracking, network performance, and more.
+✅This PGL module includes multiple dashboards that provide a comprehensive view of your system's health and performance. These dashboards include system performance, error tracking, network performance, and more.
 
-Loki-scalable is a horizontally scalable, highly available distributed logging system designed for storing and querying logs from all your applications and infrastructure.
+✅Loki-scalable is a horizontally scalable, highly available distributed logging system designed for storing and querying logs from all your applications and infrastructure.
 
-This module also includes alerting features that allow you to set up custom alerts for specific events or conditions. You can configure alerts to notify you via email, Slack, or other channels, and set up automated responses to resolve issues quickly.
+✅This module also includes alerting features that allow you to set up custom alerts for specific events or conditions. You can configure alerts to notify you via email, Slack, or other channels, and set up automated responses to resolve issues quickly.
 
 ## Supported Versions Table:
 
