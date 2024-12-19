@@ -1,0 +1,801 @@
+## Create default rules for monitoring the cluster
+##
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: true
+    configReloaders: true
+    general: true
+    k8sContainerCpuUsageSecondsTotal: true
+    k8sContainerMemoryCache: true
+    k8sContainerMemoryRss: true
+    k8sContainerMemorySwap: true
+    k8sContainerResource: true
+    k8sContainerMemoryWorkingSetBytes: true
+    k8sPodOwner: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubeControllerManager: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeSchedulerAlerting: true
+    kubeSchedulerRecording: true
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+    windows: false
+
+  ## Disabled PrometheusRule alerts
+  disabled: {}
+  # KubeAPIDown: true
+  # NodeRAIDDegraded: true
+
+windowsMonitoring:
+  ## Deploys the windows-exporter and Windows-specific dashboards and rules (job name must be 'windows-exporter')
+  enabled: false
+
+## Configuration for prometheus-windows-exporter
+## ref: https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus-windows-exporter
+##
+prometheus-windows-exporter:
+  ## Enable ServiceMonitor and set Kubernetes label to use as a job label
+  ##
+  prometheus:
+    monitor:
+      enabled: true
+      jobLabel: jobLabel
+
+  releaseLabel: true
+
+  ## Set job label to 'windows-exporter' as required by the default Prometheus rules and Grafana dashboards
+  ##
+  podLabels:
+    jobLabel: windows-exporter
+
+  ## Enable memory and container metrics as required by the default Prometheus rules and Grafana dashboards
+  ##
+  config: |-
+    collectors:
+      enabled: '[defaults],memory,container'
+
+## Component scraping etcd
+##
+kubeEtcd:
+  enabled: true
+
+## ref: https://prometheus.io/docs/alerting/alertmanager/
+##
+alertmanager:
+  ## Deploy alertmanager
+  ##
+  enabled: true
+  ## Alertmanager configuration directives
+  ## ref: https://prometheus.io/docs/alerting/configuration/#configuration-file
+  ##      https://prometheus.io/webtools/alerting/routing-tree-editor/
+  ##
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_wait: 30s
+      group_interval: 1m
+      repeat_interval: 12h
+      receiver: slack_others
+      routes:
+      - receiver: slack_critical
+        # continue: true
+        match:
+          severity: critical
+      - receiver: slack_warning
+        # continue: true
+        match:
+          severity: warning
+      # - receiver: email_alerts
+      #   match_re:
+      #     severity: critical|warning
+    receivers:
+    - name: slack_others
+      slack_configs:
+      - api_url: "https://hooks.slack.com/services/TB5FXBSUE/B041XD27KHV/A7Z4C8jUdEJhcqvxOvjiMC"
+        send_resolved: true
+        icon_url: https://avatars3.githubusercontent.com/u/3380462
+        title: |-
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}: {{ .Alerts.Firing | len }}{{ end }}]
+        text: |-
+          {{ range .Alerts }}
+
+          *Alert Name :* {{ .Labels.alertname }}
+
+          {{- if .Annotations.summary }}
+          *Alert Summary:* {{ .Annotations.summary }}
+          {{- end -}}
+
+          {{- if .Annotations.description }}
+          *Alert Description:* {{ .Annotations.description }}
+          {{ else }}
+          *Alert Message:* {{ .Annotations.message }}
+          {{- end }}
+
+          *Alert Details:*
+          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+          {{ end }}
+          {{ end }}
+
+    - name: slack_critical
+      slack_configs:
+      - api_url: "https://hooks.slack.com/services/TB5FXBSUE/B041XD27KHV/WcA7Z8jUdEJhcqvxOvjiMC"
+        send_resolved: true
+        icon_url: https://avatars3.githubusercontent.com/u/3380462
+        title: |-
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}: {{ .Alerts.Firing | len }}{{ end }}]
+        text: |-
+          {{ range .Alerts }}
+
+          *Alert Name :* {{ .Labels.alertname }}
+
+          {{- if .Annotations.summary }}
+          *Alert Summary:* {{ .Annotations.summary }}
+          {{- end -}}
+
+          {{- if .Annotations.description }}
+          *Alert Description:* {{ .Annotations.description }}
+          {{ else }}
+          *Alert Message:* {{ .Annotations.message }}
+          {{- end }}
+
+          *Alert Details:*
+          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+          {{ end }}
+          {{ end }}
+
+    - name: slack_warning
+      slack_configs:
+      - api_url: "https://hooks.slack.com/services/TB5FXBSUE/B041XD27KHV/WcA7Z4C8jEJhcqvxOvjiMC"
+        send_resolved: true
+        icon_url: https://avatars3.githubusercontent.com/u/3380462
+        title: |-
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}: {{ .Alerts.Firing | len }}{{ end }}]
+        text: |-
+          {{ range .Alerts }}
+
+          *Alert Name :* {{ .Labels.alertname }}
+
+          {{- if .Annotations.summary }}
+          *Alert Summary:* {{ .Annotations.summary }}
+          {{- end -}}
+
+          {{- if .Annotations.description }}
+          *Alert Description:* {{ .Annotations.description }}
+          {{ else }}
+          *Alert Message:* {{ .Annotations.message }}
+          {{- end }}
+
+          *Alert Details:*
+          {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+          {{ end }}
+          {{ end }}
+
+
+  alertmanagerSpec:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: "Addons-Services"
+              operator: In
+              values:
+              - "true"
+
+grafana:
+  enabled: ${grafana_enabled}
+  image:
+    repository: grafana/grafana
+    # Overrides the Grafana image tag whose default is the chart appVersion
+    tag: "11.1.0"
+  serviceAccount:
+    annotations: ${annotations}
+  priorityClassName: grafana-pod-critical
+  defaultDashboardsTimezone: browser
+  replicas: 1
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 10
+    metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 60
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 60
+
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      # Allow discovery in all namespaces for dashboards
+      searchNamespace: ALL
+      annotations: ${annotations}
+      # Support for new table panels, when enabled grafana auto migrates the old table panels to newer table panels
+      enableNewTablePanelSyntax: true
+      folder: /tmp/dashboards
+      folderAnnotation: grafana_folder
+      provider:
+        allowUiUpdates: true
+        foldersFromFilesStructure: true
+
+    resources:
+      limits:
+        cpu: 400m
+        memory: 400Mi
+      requests:
+        cpu: 50m
+        memory: 50Mi
+
+  datasources: {}
+    # datasources.yaml:
+    #   apiVersion: 1
+    #   datasources:
+    #   - name: prometheus
+    #     type: prometheus
+    #     url: http://prometheus-operator-kube-p-prometheus.monitoring.svc.cluster.local:9090
+    #     access: proxy
+    #   - name: loki
+    #     type: loki
+    #     url: http://loki:3100
+    #     access: proxy
+
+  additionalDataSources:
+   ${indent(3, loki_datasource_config)}
+   ${indent(3, cw_datasource_config)}
+   ${indent(3, tempo_datasource_config)}
+
+  persistence:
+    enabled: true
+    storageClassName: ${storage_class_name}
+    size: 20Gi
+
+  adminPassword: ${grafana_admin_password}
+
+  ingress:
+    enabled: ${ingress_enabled}
+    annotations: ${ingress_annotations}
+    hosts: ${ingress_hosts}
+    tls: ${ingress_tls}
+
+  serviceMonitor:
+    enabled: true
+    labels:
+      release: prometheus-operator
+
+  grafana.ini:
+    max_idle_connections: 500
+    dashboards:
+      min_refresh_interval: ${min_refresh_interval}
+    server:
+      enable_gzip: true
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 3Gi
+    requests:
+      cpu: 200m
+      memory: 400Mi
+
+  affinity:
+    podAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - grafana
+        topologyKey: topology.kubernetes.io/zone
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "Addons-Services"
+            operator: In
+            values:
+            - "true"
+
+kube-state-metrics:
+  metricLabelsAllowlist:
+  - pods=[*]
+  - nodes=[*]
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "Addons-Services"
+            operator: In
+            values:
+            - "true"
+
+kubeProxy:
+  enabled: false
+
+kubeApiServer:
+  enabled: false
+
+kubeControllerManager:
+  enabled: false
+
+kubeScheduler:
+  enabled: false
+
+prometheusOperator:
+  createCustomResource: false
+  enabled: true
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: "Addons-Services"
+            operator: In
+            values:
+            - "true"
+
+nodeExporter:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 600Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    priorityClassName: system-node-critical
+    enableRemoteWriteReceiver: true
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ${storage_class_name}
+          resources:
+            requests:
+              storage: 30Gi
+    retention: 14d
+    walCompression: true
+    ## If true, the Operator won't process any Prometheus configuration changes
+    ##
+    paused: false
+    resources:
+      limits:
+        cpu: 1200m
+        memory: 4Gi
+      requests:
+        cpu: 200m
+        memory: 800Mi
+
+    remoteWrite:
+      - url: http://grafana-mimir-nginx.monitoring.svc:80/api/v1/push
+
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+          - matchExpressions:
+            - key: "Addons-Services"
+              operator: In
+              values:
+              - "true"
+    additionalScrapeConfigs: []
+      # - job_name: blackbox
+      #   metrics_path: /probe
+      #   params:
+      #     module: [http_2xx]
+      #   static_configs:
+      #     # Add URLs as target parameter
+      #     - targets:
+      #       - https://www.google.com
+      #       - https://stackoverflow.com
+      #       - https://scala-lang.org
+      #       - https://helm.sh
+
+      #   relabel_configs:
+      #   - source_labels: [__address__]
+      #     target_label: __param_target
+      #   - source_labels: [__param_target]
+      #     # Important!
+      #     target_label: target
+      #     # Ensure blackbox-exporter is reachable from Prometheus
+      #   - target_label: __address__
+      #     replacement: blackbox-exporter-prometheus-blackbox-exporter:9115
+    maximumStartupDurationSeconds: 900
+  ingress:
+    enabled: ${enable_prometheus_internal_ingress}
+    annotations:
+      kubernetes.io/ingress.class: "internal-nginx"
+      kubernetes.io/tls-acme: "false"
+    hosts:
+      - ${prometheus_hostname}
+    paths:
+      - /
+
+prometheus-node-exporter:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 600Mi
+    requests:
+      cpu: 10m
+      memory: 50Mi
+
+additionalPrometheusRulesMap:
+  nodes:
+    groups:
+      - name: ethtool
+        rules:
+        - alert: conntrack_allowance_available
+          annotations:
+            description: conntrack_allowance_available is the number of tracked connections that can be established by the instance before hitting the Connections Tracked allowance of that instance type `{{$labels.instance }}`
+            summary: conntrack_allowance_available `{{ $labels.instance }}`
+          expr: node_net_ethtool{type="conntrack_allowance_available"} > 3000
+          for: 30s
+          labels:
+            severity: critical
+        - alert: conntrack_allowance_exceeded
+          annotations:
+            description: conntrack_allowance_exceeded is the number of packets dropped because connection tracking exceeded the maximum for the instance and new connections could not be established `{{$labels.instance }}`
+            summary: conntrack_allowance_exceeded `{{ $labels.instance }}`
+          expr: node_net_ethtool{type="conntrack_allowance_exceeded"} > 0
+          for: 30s
+          labels:
+            severity: critical
+        - alert: pps_allowance_exceeded
+          annotations:
+            description: pps_allowance_exceeded is the number of packets queued and/or dropped because the bidirectional PPS exceeded the maximum for the instance `{{$labels.instance }}`
+            summary: pps_allowance_exceeded `{{ $labels.instance }}`
+          expr: node_net_ethtool{type="pps_allowance_exceeded"} > 0
+          for: 30s
+          labels:
+            severity: critical
+        - alert: bw_in_allowance_exceeded
+          annotations:
+            description: bw_in_allowance_exceeded is the number of packets queued and/or dropped because the inbound aggregate bandwidth exceeded the maximum for the instance `{{$labels.instance }}`
+            summary: bw_in_allowance_exceeded `{{ $labels.instance }}`
+          expr: node_net_ethtool{type="bw_in_allowance_exceeded"} > 0
+          for: 30s
+          labels:
+            severity: critical
+        - alert: bw_out_allowance_exceeded
+          annotations:
+            description: bw_out_allowance_exceeded is the number of packets queued and/or dropped because the outbound aggregate bandwidth exceeded the maximum for the instance `{{$labels.instance }}`
+            summary: bw_out_allowance_exceeded `{{ $labels.instance }}`
+          expr: node_net_ethtool{type="bw_out_allowance_exceeded"} > 0
+          for: 30s
+          labels:
+            severity: critical
+      - name: blackbox
+        rules:
+        - alert: BlackboxProbeFailed
+          expr: probe_success == 0
+          for: 30s
+          labels:
+            severity: critical
+          annotations:
+            summary: Blackbox probe failed `{{ $labels.instance }}`
+            description: Probe failed on `{{ $labels.instance }}`
+
+        - alert: BlackboxProbeHttpFailure
+          expr: probe_http_status_code <= 199 OR probe_http_status_code >= 400
+          for: 30s
+          labels:
+            severity: critical
+          annotations:
+            summary: Blackbox probe HTTP failure `{{ $labels.instance }}`
+            description: HTTP status code is not in between 200-399 on `{{ $labels.instance }}`
+
+        - alert: BlackboxSlowProbe
+          expr: avg_over_time(probe_duration_seconds[1m]) > 30
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Blackbox slow probe `{{ $labels.instance }}`
+            description: Blackbox probe took more than 30 seconds to complete on `{{ $labels.instance }}`
+
+        - alert: BlackboxProbeSlowHttp
+          expr: avg_over_time(probe_http_duration_seconds[1m]) > 30
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Blackbox probe slow HTTP `{{ $labels.instance }}`
+            description: HTTP request took more than 30 seconds to complete on `{{ $labels.instance }}`
+
+        - alert: BlackboxProbeSlowPing
+          expr: avg_over_time(probe_icmp_duration_seconds[1m]) > 30
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Blackbox probe slow ping `{{ $labels.instance }}`
+            description: Blackbox ping took more than 30 seconds to complete on `{{ $labels.instance }}`
+
+        - alert: BlackboxSslCertificateWillExpireSoon
+          expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Blackbox SSL certificate will expire soon `{{ $labels.instance }}`
+            description: SSL certificate expires in 30 days on `{{ $labels.instance }}`
+      - name: mysql
+        rules:
+        - alert: MysqlDown
+          expr: mysql_up == 0
+          for: 1s
+          labels:
+            severity: critical
+          annotations:
+            summary: MySQL down (instance {{ $labels.instance }})
+            description: MySQL instance is down on {{ $labels.instance }}\n  VALUE = {{ $value }}\n  LABELS= {{ $labels }}
+        - alert: MysqlTooManyConnections(>80%)
+          expr: avg by (instance) (mysql_global_status_threads_connected) / avg by (instance) (mysql_global_variables_max_connections) * 100 > 80
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: MySQL too many connections (> 80%) (instance {{ $labels.instance }})
+            description: More than 80% of MySQL connections are in use on {{ $labels.instance }}\n  VALUE = {{ $value }}\n  LABELS= {{ $labels }}
+        - alert: MysqlSlowQueries
+          expr: rate(mysql_global_status_slow_queries[5m]) > 0
+          for: 2m
+          labels:
+              severity: warning
+          annotations:
+            summary: MySQL slow queries (instance {{ $labels.instance }})
+            description: MySQL server mysql has some new slow query.\n  VALUE = {{ $value }}\n  LABELS= {{ $labels }}
+        - alert: MysqlInnodbLogWaits
+          expr: rate(mysql_global_status_innodb_log_waits[15m]) > 10
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: MySQL InnoDB log waits (instance {{ $labels.instance }})
+            description: MySQL innodb log writes stalling\n  VALUE = {{ $value }}\n  LABELS= {{ $labels }}
+        - alert: Mysql Cache Hit Rate
+          expr: rate(mysql_global_status_table_open_cache_hits[5m]) / (rate(mysql_global_status_table_open_cache_hits[5m]) + rate(mysql_global_status_table_open_cache_misses[5m])) < 0.8
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: MySQL Cache Hit Rate is low (instance {{ $labels.instance }})
+            description: MySQL Cache Hit Rate is low (instance {{ $labels.instance }})
+        - alert: MysqlHighThreadsRunning
+          expr: avg by (instance) (mysql_global_status_threads_running) / avg by (instance) (mysql_global_variables_max_connections) * 100 > 60
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: MySQL high threads running (instance {{ $labels.instance }})
+            description: More than 60% of MySQL connections are in running state on {{ $labels.instance }}\n  VALUE = {{ $value }}\n  LABELS= {{ $labels }}
+        - alert: MysqlSlaveIoThreadNotRunning
+          expr: mysql_slave_status_master_server_id > 0 and ON (instance) mysql_slave_status_slave_io_running == 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: MySQL Slave IO thread not running (instance {{ $labels.instance }})
+            description: MySQL Slave IO thread not running on {{ $labels.instance }}\n  VALUE = {{ $value }}\n  LABELS= {{ $labels }}
+        - alert: MysqlRestarted
+          expr: mysql_global_status_uptime < 60
+          for: 0m
+          labels:
+            severity: info
+          annotations:
+            summary: MySQL restarted (instance {{ $labels.instance }})
+            description: MySQL has just been restarted, less than one minute ago on {{ $labels.instance }}.\n  VALUE = {{ $value }}\n  LABELS= {{ $labels }}
+
+      - name: mongodb
+        rules:
+        - alert: MongoServerDown
+          expr: up{job="mongodb-metrics"} == 0
+          for: 1s
+          labels:
+            severity: warning
+          annotations:
+            summary: Mongo server detected down by instance {{$labels.instance}} in {{$labels.namespace}}
+        - alert: HighLatency
+          expr: rate(mongodb_mongod_op_latencies_latency_total[5m]) / rate(mongodb_mongod_op_latencies_ops_total[5m]) > 35000
+          for: 10m
+          labels:
+            severity: page
+          annotations:
+            summary: High latency in instance {{$labels.instance}}
+        - alert: HighTicketUtilization
+          expr: (mongodb_mongod_wiredtiger_concurrent_transactions_out_tickets / mongodb_mongod_wiredtiger_concurrent_transactions_total_tickets) > 0.75
+          for: 10m
+          labels:
+            severity: page
+          annotations:
+            summary: Ticket usage over 75% in instance {{$labels.instance}}
+        - alert: MongodbTooManyConnections
+          expr: avg by(instance) (rate(mongodb_ss_connections{conn_type="current"}[1m])) / avg by(instance) (sum (mongodb_ss_connections) by (instance)) * 100 > 80
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: MongoDB too many connections (instance {{ $labels.instance }})
+            description: "Too many connections (> 80%)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: MongodbReplicationLag
+          expr: avg(mongodb_mongod_replset_member_optime_date{state="PRIMARY"}) - avg(mongodb_mongod_replset_member_optime_date{state="SECONDARY"}) > 10
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: MongoDB replication lag (instance {{ $labels.instance }})
+            description: "Mongodb replication lag is more than 10s\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+      - name: Redis
+        rules:
+        - alert: RedisDown
+          expr: redis_up == 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: Redis down (instance {{ $labels.instance }})
+            description: "Redis instance is down\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RedisDisconnectedSlaves
+          expr: count without (instance, job) (redis_connected_slaves) - sum without (instance, job) (redis_connected_slaves) - 1 > 1
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: Redis disconnected slaves (instance {{ $labels.instance }})
+            description: "Redis not replicating for all slaves. Consider reviewing the redis replication status.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RedisTooManyConnections
+          expr: redis_connected_clients > 1750
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Redis too many connections (instance {{ $labels.instance }})
+            description: "Redis instance has too many connections\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RedisReplicationBroken
+          expr: delta(redis_connected_slaves[1m]) < 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: Redis replication broken (instance {{ $labels.instance }})
+            description: "Redis instance lost a slave\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RedisHighResponseTime
+          expr: sum(rate(redis_commands_duration_seconds_total[5m])) / sum(rate(redis_commands_processed_total[5m])) > 0.250
+          for: 10m
+          labels:
+            severity: page
+          annotations:
+            summary: Response time over 250ms in instance {{$labels.instance}}
+        - alert: RedisHighKeysEvictionRatio
+          expr: (sum(rate(redis_evicted_keys_total[5m])) / sum(redis_db_keys)) > 0.1
+          for: 30m
+          labels:
+            severity: page
+          annotations:
+            summary: High keys eviction ratio in instance {{$labels.instance}}
+
+      - name: Jenkins Alerts
+        rules:
+        - alert: JenkinsInstanceUnhealthy
+          expr: jenkins_health_check_score < 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Jenkins server is unhealthy
+            description: "Check jenkins health. Current health values is {{ $value }}"
+        - alert: JenkinsFailedJobs
+          expr: rate(jenkins_runs_failure_total[1h]) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Jenkins Jobs Failing
+            description: "Jenkins jobs are failing\n  VALUE = {{ $value }}\n"
+      - name: Elastic Search Alerts
+        rules:
+        - alert: ElasticSearchClusterUnhealthy
+          expr: elasticsearch_cluster_health_status{color="red"}==1
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Elastic Search Cluster Is Unhealthy
+            description: "Elastic Search Cluster is in Unhealthy State. Current health values is RED"
+        - alert: ElasticSearchHighHeapMemoryUsage
+          expr: elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"} > 0.7
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: ElasticSearch node {{ $labels.name }} heap usage is high
+            description: The heap usage in {{ $labels.name }} is over 80% for 10m.
+        - alert: ElasticSearchLowHeapMemoryUsage
+          expr: elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"} < 0.15
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: ElasticSearch node {{ $labels.name }} heap usage is high
+            description: The heap usage in {{ $labels.name }} is less than 15% for 10m.
+
+      - name: Rabbitmq
+        rules:
+        - alert: RabbitmqNodeDown
+          expr: sum(rabbitmq_build_info) < 2
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: Rabbitmq node down (instance {{ $labels.instance }})
+            description: "Less than 3 nodes running in RabbitMQ cluster\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RabbitmqTooManyUnackMessages
+          expr: sum(rabbitmq_queue_messages_unacked) BY (QUEUE) > 1000
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: Rabbitmq too many unack messages (instance {{ $labels.instance }})
+            description: "Too many unacknowledged messages\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RabbitmqTooManyConnections
+          expr: rabbitmq_connections > 1000
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Rabbitmq too many connections (instance {{ $labels.instance }})
+            description: "The total connections of a node is too high\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RabbitmqUnroutableMessages
+          expr: sum by(namespace, rabbitmq_cluster) (increase(rabbitmq_channel_messages_unroutable_dropped_total[5m]) * on(instance) group_left(rabbitmq_cluster) rabbitmq_identity_info) >= 1
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Rabbitmq unroutable messages (instance {{ $labels.instance }})
+            description: "A queue has unroutable messages\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: RabbitmqFileDescriptorsNearLimit
+          expr: sum by(namespace, rabbitmq_cluster, pod, rabbitmq_node) (max_over_time(rabbitmq_process_open_fds[5m]) * on(instance) group_left(rabbitmq_cluster, rabbitmq_node, pod) rabbitmq_identity_info) / sum by(namespace, rabbitmq_cluster, pod, rabbitmq_node) (rabbitmq_process_max_tcp_sockets * on(instance) group_left(rabbitmq_cluster, rabbitmq_node, pod) rabbitmq_identity_info) > 0.8
+          for: 10m
+          annotations:
+            description: |
+              `{{ $value | humanizePercentage }}` file descriptors of file
+              descriptor limit are used in RabbitMQ node `{{ $labels.rabbitmq_node }}`,
+              pod `{{ $labels.pod }}`, RabbitMQ cluster `{{ $labels.rabbitmq_cluster }}`,
+              namespace `{{ $labels.namespace }}`.
+            summary: |
+              More than 80% of file descriptors are used on the RabbitMQ node.
+              When this value reaches 100%, new connections will not be accepted and disk write operations may fail.
+              Client libraries, peer nodes and CLI tools will not be able to connect when the node runs out of available file descriptors.
+              See https://www.rabbitmq.com/production-checklist.html#resource-limits-file-handle-limit.
+          labels:
+            rulesgroup: rabbitmq
+            severity: warning
