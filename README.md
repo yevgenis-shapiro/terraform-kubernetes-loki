@@ -1,4 +1,5 @@
 ## Terraform Kubernetes Loki
+![1_gTD64wp0vn2AZ5SazChi_w](https://github.com/user-attachments/assets/a6372a28-aaa3-4a40-9b4c-bdecb6a039e2)
 
 <br>
 
